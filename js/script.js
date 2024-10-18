@@ -9,6 +9,10 @@ async function loadDatabase() {
         keyPath: "id",
         autoIncrement: true,
       });
+      db.createObjectStore("users", {
+        keyPath: "id",
+        autoIncrement: true,
+      });
     },
   });
 
@@ -24,6 +28,12 @@ async function loadDatabase() {
       return sales.sort((a, b) => new Date(b.date) - new Date(a.date));
     },
     addSale: async (sale) => await db.add("sales", sale),
+    getUsers: async () => await db.getAll("users"),
+    addUser: async (user) => await db.add("users", user),
+    findUser: async (username, password) => {
+      const users = await db.getAll("users");
+      return users.find(user => user.username === username && user.password === password);
+    },
   };
 }
 
@@ -34,6 +44,7 @@ function initApp() {
     firstTime: localStorage.getItem("first_time") === null,
     activeMenu: 'pos',
     loadingSampleData: false,
+    loggedIn: false,
     moneys: [2000, 5000, 10000, 20000, 50000, 100000],
     products: [],
     keyword: "",
@@ -43,7 +54,22 @@ function initApp() {
     isShowModalReceipt: false,
     receiptNo: null,
     receiptDate: null,
+    username: null,
+    password: null,
     sales: [],
+    async login() {
+      // Simple login logic for demonstration
+      const user = await this.db.findUser(this.username, this.password);
+      console.log("user", user);
+      if (user) {
+        this.loggedIn = true;
+      } else {
+        alert('Invalid username or password');
+      }
+    },
+    logout() {
+      this.loggedIn = false;
+    },
     async initDatabase() {
       this.db = await loadDatabase();
       this.loadProducts();
@@ -70,6 +96,10 @@ function initApp() {
       this.products = data.products;
       for (let product of data.products) {
         await this.db.addProduct(product);
+      }
+      this.users = data.users;
+      for (let user of data.users) {
+        await this.db.addUser(user);
       }
 
       this.setFirstTime(false);
